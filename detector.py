@@ -6,6 +6,7 @@ class Detector:
         self.position = np.array(position)
         self.size = size
         self.detections = []
+        print(f"Детектор инициализирован в {self.position}")
 
     def calculate_intersection(self, particle, speed):
         try:
@@ -19,7 +20,7 @@ class Detector:
             t_near = np.max(np.minimum(t_min, t_max))
             t_far = np.min(np.maximum(t_min, t_max))
 
-            if t_near > t_far or t_far < 0:
+            if t_near > t_far:
                 return None
 
             intersection_point = ray_origin + ray_direction * t_near

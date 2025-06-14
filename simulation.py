@@ -4,7 +4,7 @@ import csv
 import os
 from generator import Generator
 from detector import Detector
-from config import DETECTOR_POSITIONS, SIMULATION_TIME, DETECTOR_SIZE, PARTICLE_SPEED, TRAJECTORY, TILT
+from config import DETECTOR_POSITIONS, SIMULATION_TIME, DETECTOR_SIZE, PARTICLE_SPEED, TRAJECTORY
 
 class Simulation:
     def __init__(self):
@@ -12,31 +12,30 @@ class Simulation:
         self.detectors = [Detector(pos, DETECTOR_SIZE) for pos in DETECTOR_POSITIONS]
         self.time = 0
         self.results = []
+        print(f"Симуляция инициализирована с {len(self.detectors)} детекторами")
 
-    def move_detectors(self, trajectory_point, tilt):
+    def move_detectors(self, trajectory_point):
         try:
-            tilt_rad = np.deg2rad(tilt)
-            rotation_matrix = np.array([
-                [np.cos(tilt_rad), 0, np.sin(tilt_rad)],
-                [0, 1, 0],
-                [-np.sin(tilt_rad), 0, np.cos(tilt_rad)]
-            ])
             for i, detector in enumerate(self.detectors):
                 original_pos = np.array(DETECTOR_POSITIONS[i])
-                rotated_pos = rotation_matrix @ original_pos
-                detector.position = rotated_pos + np.array(trajectory_point)
+                detector.position = original_pos + np.array(trajectory_point)
+            print(f"Детекторы перемещены в {trajectory_point} в момент {self.time}")
         except Exception as e:
             print(f"Ошибка при перемещении детекторов: {e}")
 
     def run(self):
+        print(f"Запуск симуляции на {SIMULATION_TIME} шагов")
         while self.time < SIMULATION_TIME:
             traj_point = TRAJECTORY(self.time)
-            self.move_detectors(traj_point, TILT)
+            self.move_detectors(traj_point)
             particles = self.generator.emit_particles(self.time)
             for particle in particles:
                 self.simulate_particle(particle)
             self.time += 1
         self.stitch_results()
+        neutron_count = sum(1 for r in self.results if r['particle_type'] == 'neutron')
+        alpha_count = sum(1 for r in self.results if r['particle_type'] == 'alpha')
+        print(f"Симуляция завершена. Зарегистрировано {len(self.results)} пересечений: {neutron_count} нейтронов, {alpha_count} альфа-частиц.")
 
     def simulate_particle(self, particle):
         for detector in self.detectors:
@@ -50,6 +49,7 @@ class Simulation:
                     'track_length': detection['track_length'],
                     'particle_direction': tuple(detection['direction'])
                 })
+                print(f"Пересечение зарегистрировано: {detection}")
 
     def stitch_results(self):
         stitched = {}
@@ -86,12 +86,3 @@ class Simulation:
             print(f"Результаты экспортированы в {filepath} в формате CSV")
         else:
             print("Неподдерживаемый формат файла. Используйте .json или .csv")
-
-    def angular_distribution(self):
-        angles = []
-        for result in self.results:
-            direction = np.array(result['particle_direction'])
-            polar_angle = np.arccos(direction[2])
-            angles.append(np.rad2deg(polar_angle))
-        print(f"Углы: {angles}")
-        return angles
