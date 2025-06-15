@@ -1,4 +1,4 @@
-import numpy as np
+from utils import np
 
 class Particle:
     def __init__(self, type, position, direction, time):
@@ -9,6 +9,3 @@ class Particle:
             raise ValueError("Направление частицы не может быть нулевым")
         self.direction = np.array(direction) / norm
         self.time = time
-
-    def move(self, distance):
-        self.position = self.position + self.direction * distance
